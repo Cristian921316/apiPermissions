@@ -1,0 +1,28 @@
+version: '3.4'
+
+networks:
+  app_network:
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "ServerSql123*"
+      ACCEPT_EULA: "Y"
+    networks:
+      - app_network
+
+  apipermissions:
+    image: ${DOCKER_REGISTRY-}apipermissions
+    build:
+      context: .
+      dockerfile: apiPermissions/Dockerfile
+    depends_on:
+      - sqlserver
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PermissionsDb;User Id=sa;Password=ServerSql123*;TrustServerCertificate=True;
+    networks:
+      - app_network
