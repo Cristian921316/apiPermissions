@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using apiPermissions.Context;
 using apiPermissions.Models;
+using apiPermissions.Kafka;
 
 namespace apiPermissions.Controllers
 {
@@ -15,8 +16,8 @@ namespace apiPermissions.Controllers
     public class PermissionsController : ControllerBase
     {
         private readonly AppDbContext _context;
-
-        public PermissionsController(AppDbContext context)
+		private readonly ProducerKafka _kafkaProducer;
+		public PermissionsController(AppDbContext context)
         {
             _context = context;
         }
@@ -81,7 +82,12 @@ namespace apiPermissions.Controllers
             _context.Permissions.Add(permissions);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
+			//{permissions.Id}
+
+			//Se envia la alerta de guardado a kafka
+			await _kafkaProducer.SendMessageAsync($"Nueva Permiso Guardado");
+
+			return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
         }
 
         // DELETE: api/Permissions/5
