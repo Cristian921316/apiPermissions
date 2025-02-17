@@ -16,6 +16,7 @@ namespace apiPermissions.Models
 		[Required]
 		public int  PermissionTypeId  { get; set;}
 		[Required]
+				
 		public DateTime PermissionDate { get; set; }		
 
 
