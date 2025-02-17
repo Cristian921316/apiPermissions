@@ -19,11 +19,14 @@ namespace apiPermissions.Controllers
         private readonly AppDbContext _context;
 		private readonly ProducerKafka _kafkaProducer;
 		private readonly ServiceElastic _elasticsearchService;
-		public PermissionsController(AppDbContext context, ServiceElastic elasticsearchService)
+		private readonly ILogger<PermissionsController> _logger;
+
+		public PermissionsController(AppDbContext context, ServiceElastic elasticsearchService, ILogger<PermissionsController> logger)
         {
             _context = context;
 			_kafkaProducer = new ProducerKafka("kafka:9092", "permissions_topic");
 			_elasticsearchService = elasticsearchService;
+			_logger = logger;
 
 		}
 
@@ -84,7 +87,9 @@ namespace apiPermissions.Controllers
         [HttpPost]
         public async Task<ActionResult<Permissions>> PostPermissions(Permissions permissions)
         {
-            _context.Permissions.Add(permissions);
+			_logger.LogInformation("Guardando.. Permissions");
+
+			_context.Permissions.Add(permissions);
             await _context.SaveChangesAsync();
 
 			//{permissions.Id}
@@ -94,6 +99,9 @@ namespace apiPermissions.Controllers
 
 			//Elastic
 			await _elasticsearchService.IndexPermissionAsync(permissions);
+
+			//log
+			_logger.LogInformation("Permissions guardado exitosamente");
 
 			return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
         }
