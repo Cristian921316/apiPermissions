@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using apiPermissions.Context;
 using apiPermissions.Models;
 using apiPermissions.Kafka;
+using apiPermissions.Elastic;
 
 namespace apiPermissions.Controllers
 {
@@ -17,10 +18,12 @@ namespace apiPermissions.Controllers
     {
         private readonly AppDbContext _context;
 		private readonly ProducerKafka _kafkaProducer;
-		public PermissionsController(AppDbContext context)
+		private readonly ServiceElastic _elasticsearchService;
+		public PermissionsController(AppDbContext context, ServiceElastic elasticsearchService)
         {
             _context = context;
 			_kafkaProducer = new ProducerKafka("kafka:9092", "permissions_topic");
+			_elasticsearchService = elasticsearchService;
 
 		}
 
@@ -88,6 +91,9 @@ namespace apiPermissions.Controllers
 
 			//Se envia la alerta de guardado a kafka
 			await _kafkaProducer.SendMessageAsync($"Nueva Permiso Guardado: {permissions.Id}");
+
+			//Elastic
+			await _elasticsearchService.IndexPermissionAsync(permissions);
 
 			return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
         }

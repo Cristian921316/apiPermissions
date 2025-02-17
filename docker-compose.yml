@@ -66,7 +66,7 @@ services:
     networks:
       - app_network
 
-  # Kibana (opcional, para visualizar Elasticsearch)
+  # Kibana
   kibana:
     image: docker.elastic.co/kibana/kibana:8.5.1
     container_name: kibana
