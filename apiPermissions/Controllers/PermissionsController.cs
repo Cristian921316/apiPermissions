@@ -20,7 +20,9 @@ namespace apiPermissions.Controllers
 		public PermissionsController(AppDbContext context)
         {
             _context = context;
-        }
+			_kafkaProducer = new ProducerKafka("kafka:9092", "permissions_topic");
+
+		}
 
         // GET: api/Permissions
         [HttpGet]
@@ -85,7 +87,7 @@ namespace apiPermissions.Controllers
 			//{permissions.Id}
 
 			//Se envia la alerta de guardado a kafka
-			await _kafkaProducer.SendMessageAsync($"Nueva Permiso Guardado");
+			await _kafkaProducer.SendMessageAsync($"Nueva Permiso Guardado: {permissions.Id}");
 
 			return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
         }
