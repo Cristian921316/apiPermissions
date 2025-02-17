@@ -34,18 +34,25 @@ namespace apiPermissions.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Permissions>>> GetPermissions()
         {
-            return await _context.Permissions.ToListAsync();
+			_logger.LogInformation("GetPermissions..");
+			_logger.LogInformation("Permissions List "+ _context.Permissions.ToListAsync());
+			return await _context.Permissions.ToListAsync();
         }
 
         // GET: api/Permissions/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Permissions>> GetPermissions(int id)
         {
-            var permissions = await _context.Permissions.FindAsync(id);
+			_logger.LogInformation("Permissions Find by Id: "+id);
+			var permissions = await _context.Permissions.FindAsync(id);
 
-            if (permissions == null)
+			_logger.LogInformation("Id found: " + _context.Permissions.FindAsync(id));
+
+			if (permissions == null)
             {
-                return NotFound();
+				_logger.LogInformation("Id Not Found: " + id);
+
+				return NotFound();
             }
 
             return permissions;
@@ -56,9 +63,14 @@ namespace apiPermissions.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPermissions(int id, Permissions permissions)
         {
-            if (id != permissions.Id)
+			_logger.LogInformation("PutPermissions by id: " + id);
+
+
+			if (id != permissions.Id)
             {
-                return BadRequest();
+				_logger.LogError("Error BadRequest, diference between: "+id +" and "+permissions.Id);
+
+				return BadRequest();
             }
 
             _context.Entry(permissions).State = EntityState.Modified;
@@ -66,10 +78,14 @@ namespace apiPermissions.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
+
+				_logger.LogInformation("Permissions Saved");
+			}
+            catch (DbUpdateConcurrencyException ex)
             {
-                if (!PermissionsExists(id))
+				_logger.LogError("Error Method PutPermissions: "+ex.Message);
+
+				if (!PermissionsExists(id))
                 {
                     return NotFound();
                 }
@@ -87,30 +103,45 @@ namespace apiPermissions.Controllers
         [HttpPost]
         public async Task<ActionResult<Permissions>> PostPermissions(Permissions permissions)
         {
-			_logger.LogInformation("Guardando.. Permissions");
+          
 
-			_context.Permissions.Add(permissions);
-            await _context.SaveChangesAsync();
+			_logger.LogInformation("Saving Permissions..");
 
-			//{permissions.Id}
 
-			//Se envia la alerta de guardado a kafka
-			await _kafkaProducer.SendMessageAsync($"Nueva Permiso Guardado: {permissions.Id}");
+			try
+			{
+				_context.Permissions.Add(permissions);
+				await _context.SaveChangesAsync();
 
-			//Elastic
-			await _elasticsearchService.IndexPermissionAsync(permissions);
+				//{permissions.Id}
 
-			//log
-			_logger.LogInformation("Permissions guardado exitosamente");
+				//Se envia la alerta de guardado a kafka
+				await _kafkaProducer.SendMessageAsync($"New Permission Saved: {permissions.Id}");
 
-			return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
+				//Elastic
+				await _elasticsearchService.IndexPermissionAsync(permissions);
+
+				//log
+				_logger.LogInformation("Permissions save sucessfully");
+
+				return CreatedAtAction("GetPermissions", new { id = permissions.Id }, permissions);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError("ERROR Method PostPermissions Exception: "+ex.Message);
+
+				return null;
+			}
+			
         }
 
         // DELETE: api/Permissions/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePermissions(int id)
         {
-            var permissions = await _context.Permissions.FindAsync(id);
+			_logger.LogInformation("Permissions Remove by id "+id);
+
+			var permissions = await _context.Permissions.FindAsync(id);
             if (permissions == null)
             {
                 return NotFound();
@@ -119,7 +150,9 @@ namespace apiPermissions.Controllers
             _context.Permissions.Remove(permissions);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+			_logger.LogInformation("Permissions removed sucessfully" );
+
+			return NoContent();
         }
 
         private bool PermissionsExists(int id)

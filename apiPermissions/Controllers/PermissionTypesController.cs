@@ -15,28 +15,36 @@ namespace apiPermissions.Controllers
     public class PermissionTypesController : ControllerBase
     {
         private readonly AppDbContext _context;
+		private readonly ILogger<PermissionsController> _logger;
 
-        public PermissionTypesController(AppDbContext context)
+		public PermissionTypesController(AppDbContext context, ILogger<PermissionsController> logger)
         {
             _context = context;
-        }
+			_logger = logger;
+		}
 
         // GET: api/PermissionTypes
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PermissionType>>> GetPermissionTypes()
         {
-            return await _context.PermissionTypes.ToListAsync();
+			_logger.LogInformation("GetPermissionsTypes..");
+			_logger.LogInformation("Permissions List " + _context.Permissions.ToListAsync());
+
+			return await _context.PermissionTypes.ToListAsync();
         }
 
         // GET: api/PermissionTypes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<PermissionType>> GetPermissionType(int id)
         {
-            var permissionType = await _context.PermissionTypes.FindAsync(id);
+			_logger.LogInformation("PermissionsType Find by Id: " + id);
+
+			var permissionType = await _context.PermissionTypes.FindAsync(id);
 
             if (permissionType == null)
             {
-                return NotFound();
+				_logger.LogInformation("PermissionsType Not Found by Id: " + id);
+				return NotFound();
             }
 
             return permissionType;
@@ -47,9 +55,12 @@ namespace apiPermissions.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPermissionType(int id, PermissionType permissionType)
         {
-            if (id != permissionType.Id)
+			_logger.LogInformation("PutPermissionsTypes by id: " + id);
+
+			if (id != permissionType.Id)
             {
-                return BadRequest();
+				_logger.LogError("Error BadRequest, diference between: " + id + " and " + permissionType.Id);
+				return BadRequest();
             }
 
             _context.Entry(permissionType).State = EntityState.Modified;
@@ -57,10 +68,13 @@ namespace apiPermissions.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
+				_logger.LogInformation("PermissionsType Saved");
+			}
+            catch (DbUpdateConcurrencyException ex)
             {
-                if (!PermissionTypeExists(id))
+				_logger.LogError("Error Method PutPermissionsTypes: " + ex.Message);
+
+				if (!PermissionTypeExists(id))
                 {
                     return NotFound();
                 }
@@ -78,26 +92,35 @@ namespace apiPermissions.Controllers
         [HttpPost]
         public async Task<ActionResult<PermissionType>> PostPermissionType(PermissionType permissionType)
         {
-            _context.PermissionTypes.Add(permissionType);
+			_logger.LogInformation("Saving PermissionsTypes..");
+
+			_context.PermissionTypes.Add(permissionType);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPermissionType", new { id = permissionType.Id }, permissionType);
+			_logger.LogInformation("Permissions save sucessfully");
+
+			return CreatedAtAction("GetPermissionType", new { id = permissionType.Id }, permissionType);
         }
 
         // DELETE: api/PermissionTypes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePermissionType(int id)
         {
-            var permissionType = await _context.PermissionTypes.FindAsync(id);
+			_logger.LogInformation("PermissionsTypes Remove by id " + id);
+
+			var permissionType = await _context.PermissionTypes.FindAsync(id);
             if (permissionType == null)
             {
-                return NotFound();
+				_logger.LogError("PermissionsTypes not found by id "+id);
+				return NotFound();
             }
 
             _context.PermissionTypes.Remove(permissionType);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+			_logger.LogInformation("PermissionsTypes removed sucessfully");
+
+			return NoContent();
         }
 
         private bool PermissionTypeExists(int id)
