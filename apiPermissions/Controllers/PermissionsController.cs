@@ -16,7 +16,7 @@ namespace apiPermissions.Controllers
     [ApiController]
     public class PermissionsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _context;//
 		private readonly ProducerKafka _kafkaProducer;
 		private readonly ServiceElastic _elasticsearchService;
 		private readonly ILogger<PermissionsController> _logger;
